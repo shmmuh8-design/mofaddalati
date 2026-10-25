@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>مفضّلتي | سالم الجابري</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">مفضّلتي</a>
+    <span class="owner">سالم حمد الجابري</span>
+  </header>
+
+  <main class="container">
+    <section id="auth-section" class="panel">
+      <h1>روابطك المفضّلة، في مكان واحد</h1>
+      <p>سجّل الدخول للوصول إلى روابطك من أجهزتك.</p>
+
+      <form id="auth-form">
+        <label for="email">البريد الإلكتروني</label>
+        <input id="email" name="email" type="email"
+          placeholder="name@example.com" required>
+
+        <label for="password">كلمة المرور</label>
+        <input id="password" name="password" type="password"
+          placeholder="أدخل كلمة المرور" required minlength="6">
+
+        <button type="submit" id="login-btn">تسجيل الدخول</button>
+        <button type="button" id="signup-btn" class="secondary">
+          إنشاء حساب
+        </button>
+        <button type="button" id="reset-btn" class="text-button">
+          نسيت كلمة المرور؟
+        </button>
+      </form>
+      <p id="auth-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="app-section" hidden>
+      <div class="welcome">
+        <div>
+          <h1>روابطي المفضّلة</h1>
+          <p id="user-email"></p>
+        </div>
+        <button id="logout-btn" class="secondary">تسجيل الخروج</button>
+      </div>
+
+      <section class="panel">
+        <h2>إضافة رابط جديد</h2>
+        <form id="bookmark-form">
+          <label for="bookmark-title">اسم الرابط</label>
+          <input id="bookmark-title" name="title"
+            placeholder="مثال: موقع مفيد" required>
+
+          <label for="bookmark-url">عنوان الرابط</label>
+          <input id="bookmark-url" name="url" type="url"
+            placeholder="https://example.com" required>
+
+          <label for="bookmark-category">التصنيف</label>
+          <input id="bookmark-category" name="category"
+            placeholder="عام">
+
+          <label for="bookmark-notes">ملاحظات (اختياري)</label>
+          <textarea id="bookmark-notes" name="notes"
+            placeholder="اكتب ملاحظة عن الرابط"></textarea>
+
+          <button type="submit" id="save-bookmark-btn">
+            حفظ الرابط
+          </button>
+        </form>
+        <p id="bookmark-message" role="status"
+          aria-live="polite"></p>
+      </section>
+
+      <section class="bookmarks-area">
+        <div class="section-heading">
+          <h2>الروابط المحفوظة</h2>
+          <input id="search-bookmarks" type="search"
+            placeholder="ابحث في روابطك" aria-label="البحث في الروابط">
+        </div>
+        <div id="bookmarks-list">
+          <p>جارٍ تحميل الروابط...</p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <p>مفضّلتي © <span id="current-year"></span> — سالم حمد الجابري</p>
+  </footer>
+</body>
+</html>
