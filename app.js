@@ -15,6 +15,8 @@
   let client = null;
   let bookmarks = [];
   let currentUser = null;
+  let editingId = null;
+  let activeCategory = "";
 
   $("current-year").textContent = new Date().getFullYear();
 
@@ -74,7 +76,10 @@
       let result;
 
       if (action === "signup") {
-        result = await sb.auth.signUp({ email, password });
+        result = await sb.auth.signUp({
+          email, password,
+          options: { emailRedirectTo: window.location.origin + window.location.pathname }
+        });
       } else {
         result = await sb.auth.signInWithPassword({ email, password });
       }
@@ -150,18 +155,18 @@
       const category = $("bookmark-category").value.trim() || "عام";
       const notes = $("bookmark-notes").value.trim();
 
-      const { error } = await sb.from("bookmarks").insert({
-        user_id: currentUser.id,
-        title,
-        url,
-        category,
-        notes
-      });
+      const { error } = editingId
+        ? await sb.from("bookmarks").update({ title, url, category, notes })
+            .eq("id", editingId).eq("user_id", currentUser.id)
+        : await sb.from("bookmarks").insert({
+            user_id: currentUser.id, title, url, category, notes
+          });
 
       if (error) throw error;
 
-      bookmarkForm.reset();
-      message(bookmarkMessage, "تم حفظ الرابط بنجاح.");
+      const wasEditing = !!editingId;
+      stopEditing();
+      message(bookmarkMessage, wasEditing ? "تم تعديل الرابط ✅" : "تم حفظ الرابط بنجاح ✅");
       await loadBookmarks();
     } catch (error) {
       message(bookmarkMessage, error.message || "تعذر حفظ الرابط.", true);
@@ -169,6 +174,71 @@
   });
 
   $("search-bookmarks").addEventListener("input", renderBookmarks);
+
+  // ===== التعديل =====
+  function startEditing(item) {
+    editingId = item.id;
+    $("bookmark-title").value = item.title;
+    $("bookmark-url").value = item.url;
+    $("bookmark-category").value = item.category || "";
+    $("bookmark-notes").value = item.notes || "";
+    $("form-title").textContent = "✏️ تعديل الرابط";
+    $("save-bookmark-btn").textContent = "حفظ التعديل";
+    $("cancel-edit-btn").hidden = false;
+    message(bookmarkMessage, "");
+    bookmarkForm.scrollIntoView({ behavior: "smooth", block: "center" });
+    $("bookmark-title").focus();
+  }
+
+  function stopEditing() {
+    editingId = null;
+    bookmarkForm.reset();
+    $("form-title").textContent = "إضافة رابط جديد";
+    $("save-bookmark-btn").textContent = "حفظ الرابط";
+    $("cancel-edit-btn").hidden = true;
+  }
+
+  $("cancel-edit-btn").addEventListener("click", () => {
+    stopEditing();
+    message(bookmarkMessage, "");
+  });
+
+  // ===== إضافة سريعة من رابط: ?url=...&title=... (مثلاً من اختصار المشاركة في الآيفون) =====
+  (function prefillFromLink() {
+    const q = new URLSearchParams(window.location.search);
+    let u = q.get("url") || "", t = q.get("title") || "";
+    const text = q.get("text") || "";
+    if (!u && /https?:\/\//.test(text)) u = text.match(/https?:\/\/\S+/)[0];
+    if (!u) return;
+    $("bookmark-url").value = u;
+    $("bookmark-title").value = t || text.replace(u, "").trim() || "";
+    history.replaceState(null, "", window.location.pathname);
+  })();
+
+  // ===== التصنيفات (أزرار للفلترة) =====
+  function renderCategories() {
+    const box = $("category-chips");
+    box.replaceChildren();
+    const counts = {};
+    bookmarks.forEach((b) => { const c = b.category || "عام"; counts[c] = (counts[c] || 0) + 1; });
+    const names = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    if (activeCategory && !counts[activeCategory]) activeCategory = "";
+    const chip = (label, value, n) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      b.setAttribute("aria-pressed", String(activeCategory === value));
+      b.textContent = label + " (" + n + ")";
+      b.addEventListener("click", () => { activeCategory = value; renderCategories(); renderBookmarks(); });
+      box.append(b);
+    };
+    if (names.length < 2) return;
+    chip("الكل", "", bookmarks.length);
+    names.forEach((c) => chip(c, c, counts[c]));
+    // اقتراحات التصنيف في خانة الإضافة
+    const dl = $("category-list");
+    dl.replaceChildren(...names.map((c) => { const o = document.createElement("option"); o.value = c; return o; }));
+  }
 
   async function loadBookmarks() {
     if (!currentUser) return;
@@ -184,6 +254,7 @@
       if (error) throw error;
 
       bookmarks = data || [];
+      renderCategories();
       renderBookmarks();
     } catch (error) {
       bookmarksList.textContent =
@@ -197,9 +268,11 @@
     bookmarksList.replaceChildren();
 
     const filtered = bookmarks.filter((item) =>
+      (!activeCategory || (item.category || "عام") === activeCategory) &&
       [item.title, item.url, item.category, item.notes]
         .some((value) => (value || "").toLowerCase().includes(query))
     );
+    $("bookmarks-count").textContent = bookmarks.length ? "(" + bookmarks.length + ")" : "";
 
     if (!filtered.length) {
       const empty = document.createElement("p");
@@ -220,6 +293,8 @@
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.textContent = item.url;
+      link.dir = "ltr";
+      link.className = "url";
 
       const category = document.createElement("span");
       category.className = "bookmark-category";
@@ -234,9 +309,35 @@
         card.append(notes);
       }
 
+      const actions = document.createElement("div");
+      actions.className = "card-actions";
+
+      const open = document.createElement("a");
+      open.className = "btn-link";
+      open.href = item.url;
+      open.target = "_blank";
+      open.rel = "noopener noreferrer";
+      open.textContent = "↗ فتح";
+
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "secondary";
+      copyBtn.textContent = "📋 نسخ";
+      copyBtn.addEventListener("click", () => {
+        (navigator.clipboard ? navigator.clipboard.writeText(item.url) : Promise.reject())
+          .then(() => message(bookmarkMessage, "انسخ الرابط ✅"), () => message(bookmarkMessage, "ما قدرت أنسخ", true));
+      });
+
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "secondary";
+      edit.textContent = "✏️ تعديل";
+      edit.addEventListener("click", () => startEditing(item));
+
       const remove = document.createElement("button");
+      remove.type = "button";
       remove.className = "delete-btn";
-      remove.textContent = "حذف الرابط";
+      remove.textContent = "🗑️ حذف";
 
       remove.addEventListener("click", async () => {
         if (!confirm("هل تريد حذف هذا الرابط؟")) return;
@@ -257,7 +358,8 @@
         }
       });
 
-      card.append(remove);
+      actions.append(open, copyBtn, edit, remove);
+      card.append(actions);
       bookmarksList.append(card);
     }
   }

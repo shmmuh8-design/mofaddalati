@@ -1,12 +1,13 @@
 
 /*
   إعدادات تطبيق مفضّلتي
-  استبدل القيمتين بعد إنشاء مشروع Supabase.
+  مربوط بمشروع Supabase (نفس مشروع سُقيا وتطبيقاتك).
+  ⚠️ هنا المفتاح العام (publishable) بس — لا تحط أبدًا مفتاح secret أو service_role.
 */
 
 window.MOFADDALATI_CONFIG = {
-  SUPABASE_URL: "YOUR_SUPABASE_PROJECT_URL",
-  SUPABASE_ANON_KEY: "YOUR_SUPABASE_PUBLISHABLE_KEY"
+  SUPABASE_URL: "https://sjnpljsnmbdhykfudebk.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_bZZjNFIDeXlCp1A5Htna7Q_dXSu9aCA"
 };
 
 window.mofaddalatiSupabase = null;

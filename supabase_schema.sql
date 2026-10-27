@@ -1,4 +1,3 @@
-
 -- مفضّلتي: قاعدة بيانات الروابط
 -- شغّل هذا الملف مرة واحدة في Supabase SQL Editor.
 
@@ -41,5 +40,19 @@ for delete
 to authenticated
 using (auth.uid() = user_id);
 
-grant select, insert, delete
+drop policy if exists "Users can update their bookmarks"
+  on public.bookmarks;
+
+create policy "Users can update their bookmarks"
+on public.bookmarks
+for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+grant select, insert, update, delete
 on public.bookmarks to authenticated;
+revoke all on public.bookmarks from anon;
+
+create index if not exists bookmarks_user_created
+  on public.bookmarks (user_id, created_at desc);

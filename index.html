@@ -3,11 +3,17 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111827">
   <title>مفضّلتي | سالم الجابري</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="مفضّلتي">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="config.js"></script>
   <script src="app.js" defer></script>
 </head>
@@ -52,7 +58,7 @@
       </div>
 
       <section class="panel">
-        <h2>إضافة رابط جديد</h2>
+        <h2 id="form-title">إضافة رابط جديد</h2>
         <form id="bookmark-form">
           <label for="bookmark-title">اسم الرابط</label>
           <input id="bookmark-title" name="title"
@@ -64,15 +70,15 @@
 
           <label for="bookmark-category">التصنيف</label>
           <input id="bookmark-category" name="category"
-            placeholder="عام">
+            placeholder="عام" list="category-list" autocomplete="off">
+          <datalist id="category-list"></datalist>
 
           <label for="bookmark-notes">ملاحظات (اختياري)</label>
           <textarea id="bookmark-notes" name="notes"
             placeholder="اكتب ملاحظة عن الرابط"></textarea>
 
-          <button type="submit" id="save-bookmark-btn">
-            حفظ الرابط
-          </button>
+          <button type="submit" id="save-bookmark-btn">حفظ الرابط</button>
+          <button type="button" id="cancel-edit-btn" class="secondary" hidden>إلغاء التعديل</button>
         </form>
         <p id="bookmark-message" role="status"
           aria-live="polite"></p>
@@ -80,10 +86,11 @@
 
       <section class="bookmarks-area">
         <div class="section-heading">
-          <h2>الروابط المحفوظة</h2>
+          <h2>الروابط المحفوظة <small id="bookmarks-count"></small></h2>
           <input id="search-bookmarks" type="search"
             placeholder="ابحث في روابطك" aria-label="البحث في الروابط">
         </div>
+        <div id="category-chips" class="chips"></div>
         <div id="bookmarks-list">
           <p>جارٍ تحميل الروابط...</p>
         </div>
